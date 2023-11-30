@@ -56,3 +56,20 @@ func (m *PostgresDBRepo) AllMovies() ([]*models.Movies, error) {
 	return movies, nil
 
 }
+
+func (m *PostgresDBRepo) GetUserByEmail(email string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout) // set timeout kalau user afk 3 detik
+	defer cancel()
+
+	sql := `SELECT * FROM users WHERE email = $1`
+
+	var user models.User
+	rows := m.DB.QueryRowContext(ctx, sql, email)
+
+	err := rows.Scan(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
