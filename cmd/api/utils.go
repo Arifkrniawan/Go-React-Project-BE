@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -11,13 +10,12 @@ import (
 type JSONResponse struct {
 	Error   bool        `json:"error"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data, oniempty"`
+	Data    interface{} `json:"data,omiempty"`
 }
 
 func (app *application) writeJson(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
 	out, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -31,7 +29,6 @@ func (app *application) writeJson(w http.ResponseWriter, status int, data interf
 	w.WriteHeader(status)
 	_, err = w.Write(out)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 

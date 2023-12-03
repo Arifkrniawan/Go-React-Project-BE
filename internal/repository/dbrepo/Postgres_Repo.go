@@ -3,7 +3,6 @@ package dbrepo
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"movies-be/internal/models"
 	"time"
 )
@@ -27,8 +26,6 @@ func (m *PostgresDBRepo) AllMovies() ([]*models.Movies, error) {
 
 	rows, err := m.DB.QueryContext(ctx, sql)
 	if err != nil {
-		fmt.Println(rows)
-		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -61,12 +58,13 @@ func (m *PostgresDBRepo) GetUserByEmail(email string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout) // set timeout kalau user afk 3 detik
 	defer cancel()
 
-	sql := `SELECT * FROM users WHERE email = $1`
+	sql := `select id, email, first_name, last_name, password,
+	created_at, updated_at from users where email = $1`
 
 	var user models.User
 	rows := m.DB.QueryRowContext(ctx, sql, email)
 
-	err := rows.Scan(&user)
+	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Password, &user.Email, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

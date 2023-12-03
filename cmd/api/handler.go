@@ -29,40 +29,42 @@ func (app *application) Movies(w http.ResponseWriter, r *http.Request) {
 	_ = app.writeJson(w, http.StatusOK, movies)
 }
 
-func (app *application) authenticate(w http.ResponseWriter, r *http.Request){
+func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 	//Read json payload
 	var requestPayload struct {
-		Email string `json:"email"`
-		Password string `json:"password`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	log.Print(requestPayload.Email, requestPayload.Password)
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errJSON(w, err, http.StatusBadRequest)
 	}
 
-	err := app.readJSON(w, r, requestPayload)
-	if err != nil {
-		app.errJSON(w, err)
-	}
 	//Validate user against database
 	user, err := app.DB.GetUserByEmail(requestPayload.Email)
 	if err != nil {
 		app.errJSON(w, err, http.StatusBadRequest)
 		return
 	}
-
+	log.Print(user)
 	//Check password
-	valid, err := user.PasswordMatch(user.Password)
+	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
 		app.errJSON(w, err, http.StatusBadRequest)
+		log.Print(requestPayload.Password)
 		return
 	}
 
-	
 	//Create JWT user
 	userr := jwtUser{
-		Id: user.ID,
+		Id:        user.ID,
 		FirstName: user.FirstName,
-		LastName: user.LastName,
+		LastName:  user.LastName,
 	}
 
-	token, err := app.auth.GenerateToken(&userr)
+	token, err := app.auth.GenerateTokenPair(&userr)
 	if err != nil {
 		app.errJSON(w, err)
 		return

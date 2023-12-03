@@ -34,7 +34,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func (j *Auth) GenerateToken(user *jwtUser) (TokenPairs, error) {
+func (j *Auth) GenerateTokenPair(user *jwtUser) (TokenPairs, error) {
 	//Create a token
 	token := jwt.New(jwt.SigningMethodHS256) //method can be public key or secret key
 
@@ -83,28 +83,28 @@ func (j *Auth) GenerateToken(user *jwtUser) (TokenPairs, error) {
 
 func (j *Auth) GetRefreshCookie(refreshToken string) *http.Cookie {
 	return &http.Cookie{
-		Name: j.CookieName,
-		Path: j.CookiePath,
-		Value: refreshToken,
-		Domain: j.CookieDomain,
-		Expires: time.Now().Add(j.RefreshExpiry),
-		MaxAge: int(j.RefreshExpiry.Seconds()),
+		Name:     j.CookieName,
+		Path:     j.CookiePath,
+		Value:    refreshToken,
+		Domain:   j.CookieDomain,
+		Expires:  time.Now().Add(j.RefreshExpiry),
+		MaxAge:   int(j.RefreshExpiry.Seconds()),
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
-		Secure: true,
+		Secure:   true,
 	}
 }
 
 func (j *Auth) GetExpiredRefreshCookie(refreshToken string) *http.Cookie {
 	return &http.Cookie{
-		Name: j.CookieName,
-		Path: j.CookiePath,
-		Value: "",
-		Domain: j.CookieDomain,
-		Expires: time.Unix(0,0),
-		MaxAge: -1,
+		Name:     j.CookieName,
+		Path:     j.CookiePath,
+		Value:    "",
+		Domain:   j.CookieDomain,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
-		Secure: true,
+		Secure:   true,
 	}
 }
