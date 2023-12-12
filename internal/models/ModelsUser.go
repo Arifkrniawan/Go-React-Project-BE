@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,9 +18,6 @@ type User struct {
 }
 
 func (u *User) PasswordMatches(plainText string) (bool, error) {
-	fmt.Println("Stored Hash:", u.Password, u.Email, u.ID)
-	fmt.Println("Input Hash:", plainText)
-
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainText))
 	if err != nil {
 		switch {

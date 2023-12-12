@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -38,7 +37,6 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	log.Print(requestPayload.Email, requestPayload.Password)
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
@@ -51,12 +49,10 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 		app.errJSON(w, err, http.StatusBadRequest)
 		return
 	}
-	log.Print(user)
 	//Check password
 	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
 		app.errJSON(w, err, http.StatusBadRequest)
-		log.Print(requestPayload.Password)
 		return
 	}
 
@@ -123,4 +119,9 @@ func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
 			app.writeJson(w, http.StatusOK, tokenPairs)
 		}
 	}
+}
+
+func (app *application) logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, app.auth.GetExpiredRefreshCookie())
+	w.WriteHeader(http.StatusAccepted)
 }

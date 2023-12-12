@@ -64,7 +64,7 @@ func (m *PostgresDBRepo) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	rows := m.DB.QueryRowContext(ctx, sql, email)
 
-	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Password, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	err := rows.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (m *PostgresDBRepo) GetUserById(id int) (*models.User, error) {
 	var user models.User
 	rows := m.DB.QueryRowContext(ctx, sql, id)
 
-	err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Password, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	err := rows.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

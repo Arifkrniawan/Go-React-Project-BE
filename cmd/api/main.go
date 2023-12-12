@@ -51,7 +51,8 @@ func main() {
 		TokenExpiry:   time.Minute * 15,
 		RefreshExpiry: time.Hour * 24,
 		CookiePath:    "/",
-		CookieName:    "__Host-refresh_token",
+		CookieName:    "_Host-refresh-token",
+		CookieDomain:  app.CookieDomain,
 	}
 
 	log.Println("listen and serve on port:", port)
