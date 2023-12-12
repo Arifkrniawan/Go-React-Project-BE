@@ -10,7 +10,7 @@ import (
 type JSONResponse struct {
 	Error   bool        `json:"error"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data,omiempty"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 func (app *application) writeJson(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
@@ -50,7 +50,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 
 	err = dec.Decode(&struct{}{})
 	if err != io.EOF {
-		return errors.New("Body must be only contain a single json value")
+		return errors.New("body must be only contain a single json value")
 	}
 
 	return nil

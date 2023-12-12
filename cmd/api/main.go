@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	dbrepo "movies-be/internal/Repository/DBRepo"
+	dbrepo "movies-be/internal/Repository/dbrepo"
 	"movies-be/internal/repository"
 	"net/http"
 	"time"
@@ -13,13 +13,13 @@ import (
 var port = 8080
 
 type application struct {
-	DSN    string
-	Domain string
-	DB     repository.DatabaseRepo
-	auth  Auth
-	JWTSecret string
-	JWTIssuer string
-	JWTAudience string
+	DSN          string
+	Domain       string
+	DB           repository.DatabaseRepo
+	auth         Auth
+	JWTSecret    string
+	JWTIssuer    string
+	JWTAudience  string
 	CookieDomain string
 }
 
@@ -44,14 +44,14 @@ func main() {
 	app.DB = &dbrepo.PostgresDBRepo{DB: conn}
 	defer app.DB.Connection().Close()
 
-	app.auth = Auth {
-		Secret: app.JWTSecret,
-		Issuer: app.JWTIssuer,
-		Audience: app.JWTAudience,
-		TokenExpiry: time.Minute * 15,
+	app.auth = Auth{
+		Secret:        app.JWTSecret,
+		Issuer:        app.JWTIssuer,
+		Audience:      app.JWTAudience,
+		TokenExpiry:   time.Minute * 15,
 		RefreshExpiry: time.Hour * 24,
-		CookiePath: "/",
-		CookieName: "__Host-refresh_token",
+		CookiePath:    "/",
+		CookieName:    "__Host-refresh_token",
 	}
 
 	log.Println("listen and serve on port:", port)

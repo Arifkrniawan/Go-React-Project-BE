@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt"
 )
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
@@ -78,28 +79,48 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 	app.writeJson(w, http.StatusAccepted, token)
 }
 
-// func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
-// 	for _, cookie := range r.Cookies() {
-// 		if cookie.Name == app.auth.CookieName {
-// 			claims := &Claims{}
-// 			refreshToken := cookie.Value
+func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
+	for _, cookie := range r.Cookies() {
+		if cookie.Name == app.auth.CookieName {
+			claims := &Claims{}
+			refreshToken := cookie.Value
 
-// 			_, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error){
-// 				return []byte(app.JWTSecret), nil
-// 			})
+			_, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+				return []byte(app.JWTSecret), nil
+			})
 
-// 			if err != nil {
-// 				app.errJSON(w, err, http.StatusUnauthorized)
-// 				return
-// 			}
+			if err != nil {
+				app.errJSON(w, err, http.StatusUnauthorized)
+				return
+			}
 
-// 			userID, err := strconv.Atoi(claims.Subject)
-// 			if err != nil {
-// 				app.errJSON(w, err, http.StatusUnauthorized)
-// 				return
-// 			}
+			userID, err := strconv.Atoi(claims.Subject)
+			if err != nil {
+				app.errJSON(w, err, http.StatusUnauthorized)
+				return
+			}
 
-// 			user, err := app.DB.GetUserByEmail()
-// 		}
-// 	}
-// }
+			user, err := app.DB.GetUserById(userID)
+			if err != nil {
+				app.errJSON(w, err, http.StatusUnauthorized)
+				return
+			}
+
+			u := jwtUser{
+				Id:        user.ID,
+				FirstName: user.FirstName,
+				LastName:  user.LastName,
+			}
+
+			tokenPairs, err := app.auth.GenerateTokenPair(&u)
+			if err != nil {
+				app.errJSON(w, err, http.StatusUnauthorized)
+				return
+			}
+
+			http.SetCookie(w, app.auth.GetRefreshCookie(tokenPairs.RefreshToken))
+
+			app.writeJson(w, http.StatusOK, tokenPairs)
+		}
+	}
+}
