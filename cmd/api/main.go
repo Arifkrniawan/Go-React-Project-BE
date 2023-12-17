@@ -45,14 +45,14 @@ func main() {
 	defer app.DB.Connection().Close()
 
 	app.auth = Auth{
-		Secret:        app.JWTSecret,
-		Issuer:        app.JWTIssuer,
-		Audience:      app.JWTAudience,
-		TokenExpiry:   time.Minute * 15,
+		Issuer: app.JWTIssuer,
+		Audience: app.JWTAudience,
+		Secret: app.JWTSecret,
+		TokenExpiry: time.Minute * 15,
 		RefreshExpiry: time.Hour * 24,
-		CookiePath:    "/",
-		CookieName:    "_Host-refresh-token",
-		CookieDomain:  app.CookieDomain,
+		CookiePath: "/",
+		CookieName: "refresh_token",
+		CookieDomain: app.CookieDomain,
 	}
 
 	log.Println("listen and serve on port:", port)

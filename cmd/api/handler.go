@@ -5,24 +5,24 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
-	var g = struct {
+	var payload = struct {
 		Status  string `json:"status"`
 		Message string `json:"message"`
 		Version string `json:"version"`
 	}{
-		Status:  "Hai",
-		Message: "Ok",
+		Status:  "active",
+		Message: "Go Movies up and running",
 		Version: "1.0.0",
 	}
 
-	_ = app.writeJSON(w, http.StatusOK, g)
+	_ = app.writeJSON(w, http.StatusOK, payload)
 }
 
-func (app *application) Movies(w http.ResponseWriter, r *http.Request) {
+func (app *application) AllMovies(w http.ResponseWriter, r *http.Request) {
 	movies, err := app.DB.AllMovies()
 	if err != nil {
 		app.errorJSON(w, err)
@@ -33,7 +33,7 @@ func (app *application) Movies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
-	//Read json payload
+	// read json payload
 	var requestPayload struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -42,38 +42,41 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
 		app.errorJSON(w, err, http.StatusBadRequest)
+		return
 	}
 
-	//Validate user against database
+	// validate user against database
 	user, err := app.DB.GetUserByEmail(requestPayload.Email)
 	if err != nil {
-		app.errorJSON(w, err, http.StatusBadRequest)
-		return
-	}
-	//Check password
-	valid, err := user.PasswordMatches(requestPayload.Password)
-	if err != nil || !valid {
-		app.errorJSON(w, err, http.StatusBadRequest)
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
 		return
 	}
 
-	//Create JWT user
-	userr := jwtUser{
+	// check password
+	valid, err := user.PasswordMatches(requestPayload.Password)
+	if err != nil || !valid {
+		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
+		return
+	}
+
+	// create a jwt user
+	u := jwtUser{
 		ID:        user.ID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 	}
 
-	token, err := app.auth.GenerateTokenPair(&userr)
+	// generate tokens
+	tokens, err := app.auth.GenerateTokenPair(&u)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
-	refreshedCookie := app.auth.GetRefreshCookie(token.RefreshToken)
-	http.SetCookie(w, refreshedCookie)
+	refreshCookie := app.auth.GetRefreshCookie(tokens.RefreshToken)
+	http.SetCookie(w, refreshCookie)
 
-	app.writeJSON(w, http.StatusAccepted, token)
+	app.writeJSON(w, http.StatusAccepted, tokens)
 }
 
 func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
