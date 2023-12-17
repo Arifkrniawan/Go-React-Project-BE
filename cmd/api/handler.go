@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -18,17 +19,17 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 		Version: "1.0.0",
 	}
 
-	_ = app.writeJson(w, http.StatusOK, g)
+	_ = app.writeJSON(w, http.StatusOK, g)
 }
 
 func (app *application) Movies(w http.ResponseWriter, r *http.Request) {
 	movies, err := app.DB.AllMovies()
 	if err != nil {
-		app.errJSON(w, err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	_ = app.writeJson(w, http.StatusOK, movies)
+	_ = app.writeJSON(w, http.StatusOK, movies)
 }
 
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
@@ -40,39 +41,39 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errJSON(w, err, http.StatusBadRequest)
+		app.errorJSON(w, err, http.StatusBadRequest)
 	}
 
 	//Validate user against database
 	user, err := app.DB.GetUserByEmail(requestPayload.Email)
 	if err != nil {
-		app.errJSON(w, err, http.StatusBadRequest)
+		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 	//Check password
 	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
-		app.errJSON(w, err, http.StatusBadRequest)
+		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	//Create JWT user
 	userr := jwtUser{
-		Id:        user.ID,
+		ID:        user.ID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 	}
 
 	token, err := app.auth.GenerateTokenPair(&userr)
 	if err != nil {
-		app.errJSON(w, err)
+		app.errorJSON(w, err)
 		return
 	}
 
 	refreshedCookie := app.auth.GetRefreshCookie(token.RefreshToken)
 	http.SetCookie(w, refreshedCookie)
 
-	app.writeJson(w, http.StatusAccepted, token)
+	app.writeJSON(w, http.StatusAccepted, token)
 }
 
 func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
@@ -81,42 +82,44 @@ func (app *application) refreshToken(w http.ResponseWriter, r *http.Request) {
 			claims := &Claims{}
 			refreshToken := cookie.Value
 
+			// parse the token to get the claims
 			_, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
 				return []byte(app.JWTSecret), nil
 			})
-
 			if err != nil {
-				app.errJSON(w, err, http.StatusUnauthorized)
+				app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
 				return
 			}
 
+			// get the user id from the token claims
 			userID, err := strconv.Atoi(claims.Subject)
 			if err != nil {
-				app.errJSON(w, err, http.StatusUnauthorized)
+				app.errorJSON(w, errors.New("unknown user"), http.StatusUnauthorized)
 				return
 			}
 
 			user, err := app.DB.GetUserById(userID)
 			if err != nil {
-				app.errJSON(w, err, http.StatusUnauthorized)
+				app.errorJSON(w, errors.New("unknown user"), http.StatusUnauthorized)
 				return
 			}
 
 			u := jwtUser{
-				Id:        user.ID,
+				ID:        user.ID,
 				FirstName: user.FirstName,
 				LastName:  user.LastName,
 			}
 
 			tokenPairs, err := app.auth.GenerateTokenPair(&u)
 			if err != nil {
-				app.errJSON(w, err, http.StatusUnauthorized)
+				app.errorJSON(w, errors.New("error generating tokens"), http.StatusUnauthorized)
 				return
 			}
 
 			http.SetCookie(w, app.auth.GetRefreshCookie(tokenPairs.RefreshToken))
 
-			app.writeJson(w, http.StatusOK, tokenPairs)
+			app.writeJSON(w, http.StatusOK, tokenPairs)
+
 		}
 	}
 }

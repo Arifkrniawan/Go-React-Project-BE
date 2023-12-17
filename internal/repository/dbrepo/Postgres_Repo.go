@@ -77,7 +77,7 @@ func (m *PostgresDBRepo) GetUserById(id int) (*models.User, error) {
 	defer cancel()
 
 	sql := `select id, email, first_name, last_name, password,
-	created_at, updated_at from users where id = $1`
+	created_at, updated_at, from users where id = $1`
 
 	var user models.User
 	rows := m.DB.QueryRowContext(ctx, sql, id)
